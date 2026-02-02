@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1072990218510",
+    "project_id": "haritham-4c812",
+    "storage_bucket": "haritham-4c812.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1072990218510:android:ba456af5c238a4529f8f5f",
+        "android_client_info": {
+          "package_name": "com.example.haritham"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZT7TeU_YvLliQF5TrUiQQEpKyk8g5M2k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
