@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -106,16 +105,20 @@ class _PanchayathHksComplaintsScreenState
     }
 
     if (selectedDate != null) {
-      final s = Timestamp.fromDate(
-          DateTime(selectedDate!.year, selectedDate!.month, selectedDate!.day));
-      final e = Timestamp.fromDate(
-          DateTime(selectedDate!.year, selectedDate!.month, selectedDate!.day + 1));
+      final start = DateTime(
+        selectedDate!.year,
+        selectedDate!.month,
+        selectedDate!.day,
+      );
 
-      q = q.where('createdAt', isGreaterThanOrEqualTo: s)
-          .where('createdAt', isLessThan: e);
+      final end = start.add(const Duration(days: 1));
+
+      q = q
+          .where('createdAt',
+          isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+          .where('createdAt',
+          isLessThan: Timestamp.fromDate(end));
     }
-
-    q = q.orderBy('createdAt', descending: true);
 
     return Scaffold(
       appBar: AppBar(
@@ -173,7 +176,6 @@ class _PanchayathHksComplaintsScreenState
 
                       const SizedBox(height: 10),
 
-                      // ✅ ONLY NEW PART
                       if (data['status'] == "pending")
                         SizedBox(
                           width: double.infinity,

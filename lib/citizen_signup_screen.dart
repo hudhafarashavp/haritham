@@ -214,7 +214,7 @@ class _CitizenSignupScreenState extends State<CitizenSignupScreen> {
             if (otpSent && !verified)
               ElevatedButton(
                 onPressed: loading ? null : _checkOtp,
-                child: const Text('Verify OTP'),
+                child: const Text('Verify '),
               ),
 
             if (verified) ...[

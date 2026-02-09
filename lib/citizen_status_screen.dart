@@ -1,58 +1,55 @@
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HksStatusScreen extends StatelessWidget {
-  const HksStatusScreen({super.key});
+class CitizenStatusScreen extends StatelessWidget {
+  const CitizenStatusScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final email = FirebaseAuth.instance.currentUser?.email;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Complaint History"),
+        title: const Text("My Complaint Status"),
         backgroundColor: Colors.green,
       ),
-
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('hks_complaints')
+            .where('citizenEmail', isEqualTo: email)
             .snapshots(),
 
         builder: (context, snapshot) {
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (snapshot.data!.docs.isEmpty) {
             return const Center(child: Text("No complaints yet"));
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-
-              final data =
-              snapshot.data!.docs[index].data() as Map<String, dynamic>;
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              final d = doc.data() as Map<String, dynamic>;
 
               return Card(
                 margin: const EdgeInsets.all(10),
                 child: ListTile(
-                  title: Text(data['issueType'] ?? ''),
-
+                  title: Text(d['issueType'] ?? ''),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(data['description'] ?? ''),
-                      const SizedBox(height: 6),
-                      Text("Status: ${data['status']}"),
-                      const SizedBox(height: 6),
-                      Text("Citizen: ${data['citizenEmail'] ?? ''}",
-                          style: const TextStyle(fontSize: 12)),
+                      Text(d['description'] ?? ''),
+                      const SizedBox(height: 4),
+                      Text("Status: ${d['status']}"),
                     ],
                   ),
                 ),
               );
-            },
+            }).toList(),
           );
         },
       ),

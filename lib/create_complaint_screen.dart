@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 
 class CreateComplaintScreen extends StatefulWidget {
   const CreateComplaintScreen({super.key});
@@ -11,9 +12,12 @@ class CreateComplaintScreen extends StatefulWidget {
 
 class _CreateComplaintScreenState extends State<CreateComplaintScreen> {
 
+  final _formKey = GlobalKey<FormState>();
+
   final descriptionController = TextEditingController();
   final photoUrlController = TextEditingController();
   final locationController = TextEditingController();
+  final phoneController = TextEditingController(); // ✅ NEW
 
   String? issueType;
   bool loading = false;
@@ -29,10 +33,7 @@ class _CreateComplaintScreenState extends State<CreateComplaintScreen> {
 
   Future<void> submit() async {
 
-    if (issueType == null ||
-        descriptionController.text.isEmpty ||
-        locationController.text.isEmpty) {
-
+    if (!_formKey.currentState!.validate() || issueType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Fill all required fields")),
       );
@@ -41,20 +42,28 @@ class _CreateComplaintScreenState extends State<CreateComplaintScreen> {
 
     setState(() => loading = true);
 
-    final user = FirebaseAuth.instance.currentUser;
+    final prefs = await SharedPreferences.getInstance();
+    final hksUsername = prefs.getString('hksUsername');
+
+    if (hksUsername == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("HKS not logged")));
+      setState(() => loading = false);
+      return;
+    }
 
     await FirebaseFirestore.instance.collection("hks_complaints").add({
-      "hksEmail": user?.email,
+      "hksUsername": hksUsername,
       "issueType": issueType,
       "location": locationController.text.trim(),
       "description": descriptionController.text.trim(),
       "photoUrl": photoUrlController.text.trim(),
+      "contactNumber": phoneController.text.trim(), // ✅ SAVED
       "createdAt": Timestamp.now(),
       "status": "pending",
     });
 
     setState(() => loading = false);
-
     Navigator.pop(context);
   }
 
@@ -63,109 +72,127 @@ class _CreateComplaintScreenState extends State<CreateComplaintScreen> {
       hintText: hint,
       filled: true,
       fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
     );
   }
+
+  Widget section(String t) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(t,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+  );
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F6F3),
+      backgroundColor: const Color(0xFFF1F6F3),
       appBar: AppBar(
-        title: const Text("New Complaint"),
+        title: const Text("Submit Complaint"),
         backgroundColor: Colors.green,
       ),
 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        padding: const EdgeInsets.all(18),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            const Text(
-              "Issue Type",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+              section("Issue Type"),
 
-            const SizedBox(height: 6),
+              DropdownButtonFormField(
+                value: issueType,
+                decoration: input("Select issue"),
+                items: issues
+                    .map((e) =>
+                    DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
+                onChanged: (v) => setState(() => issueType = v.toString()),
+                validator: (v) => v == null ? "Select issue" : null,
+              ),
 
-            DropdownButtonFormField(
-              value: issueType,
-              decoration: input("Select issue"),
-              items: issues.map((e) =>
-                  DropdownMenuItem(value: e, child: Text(e))).toList(),
-              onChanged: (v) => setState(() => issueType = v.toString()),
-            ),
+              const SizedBox(height: 18),
 
-            const SizedBox(height: 16),
+              section("Location"),
 
-            const Text(
-              "Location",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+              TextFormField(
+                controller: locationController,
+                decoration: input("Ward / Street / Area"),
+                validator: (v) =>
+                v == null || v.isEmpty ? "Enter location" : null,
+              ),
 
-            const SizedBox(height: 6),
+              const SizedBox(height: 18),
 
-            TextField(
-              controller: locationController,
-              decoration: input("Area / Ward / Street"),
-            ),
+              section("Description"),
 
-            const SizedBox(height: 16),
+              TextFormField(
+                controller: descriptionController,
+                maxLines: 4,
+                decoration: input("Explain the problem clearly"),
+                validator: (v) =>
+                v == null || v.isEmpty ? "Enter description" : null,
+              ),
 
-            const Text(
-              "Description",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+              const SizedBox(height: 18),
 
-            const SizedBox(height: 6),
+              section("Photo URL (optional)"),
 
-            TextField(
-              controller: descriptionController,
-              maxLines: 4,
-              decoration: input("Describe the issue..."),
-            ),
+              TextField(
+                controller: photoUrlController,
+                decoration: input("Paste image link"),
+              ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 18),
 
-            const Text(
-              "Photo URL (optional)",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+              // ✅ CONTACT NUMBER WITH VALIDATION
+              section("Contact Number"),
 
-            const SizedBox(height: 6),
+              TextFormField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                decoration: input("10 digit mobile number"),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Enter phone number";
+                  }
+                  if (value.length != 10) {
+                    return "Phone must be 10 digits";
+                  }
+                  return null;
+                },
+              ),
 
-            TextField(
-              controller: photoUrlController,
-              decoration: input("Paste image link"),
-            ),
+              const SizedBox(height: 30),
 
-            const SizedBox(height: 30),
-
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
-                ),
-                onPressed: loading ? null : submit,
-                child: loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                  "SUBMIT",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  onPressed: loading ? null : submit,
+                  child: loading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                    "SUBMIT COMPLAINT",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

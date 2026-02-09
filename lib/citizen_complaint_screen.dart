@@ -14,6 +14,9 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
 
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController proofUrlController = TextEditingController();
+  final TextEditingController hksWorkerController = TextEditingController();
+  final TextEditingController wardController = TextEditingController();
+  final TextEditingController contactController = TextEditingController();
 
   String? selectedIssueType;
   bool loading = false;
@@ -51,6 +54,9 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
         "issueType": selectedIssueType,
         "description": descriptionController.text.trim(),
         "proofUrl": proofUrl.isEmpty ? null : proofUrl,
+        "hksWorkerName": hksWorkerController.text.trim(),
+        "wardNo": wardController.text.trim(),
+        "contactNo": contactController.text.trim(),
         "createdAt": Timestamp.now(),
         "status": "pending",
       });
@@ -61,9 +67,7 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
         context: context,
         builder: (_) => AlertDialog(
           title: const Text("Complaint Submitted ✅"),
-          content: const Text(
-            "Your complaint has been submitted successfully.\nWe will review it soon.",
-          ),
+          content: const Text("Your complaint has been submitted successfully."),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -77,6 +81,9 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
         selectedIssueType = null;
         descriptionController.clear();
         proofUrlController.clear();
+        hksWorkerController.clear();
+        wardController.clear();
+        contactController.clear();
       });
     } catch (e) {
       _show("Failed: $e");
@@ -94,6 +101,9 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
   void dispose() {
     descriptionController.dispose();
     proofUrlController.dispose();
+    hksWorkerController.dispose();
+    wardController.dispose();
+    contactController.dispose();
     super.dispose();
   }
 
@@ -157,6 +167,56 @@ class _CitizenComplaintScreenState extends State<CitizenComplaintScreen> {
                 validator: (value) {
                   if (value == null || value.isEmpty) return null;
                   if (!_isValidUrl(value)) return "Invalid URL";
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: hksWorkerController,
+                decoration: const InputDecoration(
+                  labelText: "HKS Worker Name (Optional)",
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: wardController,
+                decoration: const InputDecoration(
+                  labelText: "Ward No",
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                validator: (v) =>
+                v == null || v.isEmpty ? "Ward required" : null,
+              ),
+
+              const SizedBox(height: 16),
+
+              // ✅ FIXED 10 DIGIT VALIDATION
+              TextFormField(
+                controller: contactController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: "Contact Number",
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return "Contact required";
+                  }
+
+                  final phone = v.trim();
+
+                  if (!RegExp(r'^[0-9]{10}$').hasMatch(phone)) {
+                    return "Enter valid 10 digit mobile number";
+                  }
+
                   return null;
                 },
               ),

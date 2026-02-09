@@ -9,7 +9,6 @@ import 'panchayath_notification_management_screen.dart';
 import 'panchayath_complaints_screen.dart';
 import 'panchayath_illegal_dumping_screen.dart';
 import 'panchayath_hks_complaints_screen.dart';
-import 'panchayath_dashboard_screen.dart';
 import 'worker_management_screen.dart';
 
 class PanchayathHomeScreen extends StatelessWidget {
@@ -198,29 +197,6 @@ class PanchayathHomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const PanchayathHksComplaintsScreen(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2E7D32),
-                side: const BorderSide(color: Color(0xFF2E7D32), width: 2),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              icon: const Icon(Icons.dashboard),
-              label: const Text('Dashboard'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const PanchayathDashboardScreen(),
                   ),
                 );
               },

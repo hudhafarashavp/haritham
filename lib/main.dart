@@ -10,12 +10,8 @@ import 'admin_home_screen.dart';
 import 'startup_animation_screen.dart';
 
 void main() async {
-  // Required before using Firebase & async code
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase once
   await Firebase.initializeApp();
-
   runApp(const MyApp());
 }
 
@@ -26,12 +22,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: StartupAnimationScreen(), // startup animation
+      home: StartupAnimationScreen(),
     );
   }
 }
 
-// Decides where to navigate after startup animation
+// ================= SPLASH DECIDER =================
+
 class SplashDecider extends StatefulWidget {
   const SplashDecider({super.key});
 
@@ -40,6 +37,7 @@ class SplashDecider extends StatefulWidget {
 }
 
 class _SplashDeciderState extends State<SplashDecider> {
+
   @override
   void initState() {
     super.initState();
@@ -48,45 +46,34 @@ class _SplashDeciderState extends State<SplashDecider> {
 
   Future<void> _decideScreen() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
     final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     final role = prefs.getString('role');
 
-    // Not logged in → Login
     if (!isLoggedIn || role == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      _go(const LoginScreen());
       return;
     }
 
-    // Role-based navigation
     if (role == 'citizen') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      _go(const HomeScreen());
     } else if (role == 'hks') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => HksHomeScreen()),
-      );
+      _go(const HksHomeScreen());
     } else if (role == 'panchayath') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const PanchayathHomeScreen()),
-      );
+      _go(const PanchayathHomeScreen());
     } else if (role == 'admin') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
-      );
+      _go(const AdminHomeScreen());
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
+      _go(const LoginScreen());
     }
+  }
+
+  void _go(Widget page) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => page),
+    );
   }
 
   @override

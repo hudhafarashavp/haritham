@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// 🔹 Screens
 import 'home_screen.dart';
 import 'hks_home_screen.dart';
 import 'panchayath_home_screen.dart';
@@ -23,8 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
-
-  // 👁 NEW ONLY
   bool _hidePassword = true;
 
   @override
@@ -40,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Icon(Icons.recycling, size: 100, color: Colors.green),
+
                 const SizedBox(height: 12),
 
                 const Text(
@@ -70,15 +70,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     filled: true,
                     fillColor: Colors.white,
                   ),
-                  validator: (value) =>
-                  value == null || value.trim().isEmpty
-                      ? 'This field is required'
-                      : null,
+                  validator: (v) =>
+                  v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
 
                 const SizedBox(height: 16),
 
-                // 🔥 PASSWORD WITH EYE ONLY
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _hidePassword,
@@ -89,33 +86,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: Colors.white,
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _hidePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _hidePassword = !_hidePassword;
-                        });
-                      },
+                          _hidePassword ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () =>
+                          setState(() => _hidePassword = !_hidePassword),
                     ),
                   ),
-                  validator: (value) =>
-                  value == null || value.isEmpty
-                      ? 'Password is required'
-                      : null,
+                  validator: (v) =>
+                  v == null || v.isEmpty ? 'Password required' : null,
                 ),
-
-                const SizedBox(height: 6),
 
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: _forgotPassword,
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(color: Colors.green),
-                    ),
+                    child: const Text('Forgot password?',
+                        style: TextStyle(color: Colors.green)),
                   ),
                 ),
 
@@ -135,22 +120,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: _loading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                    'LOGIN',
-                    style:
-                    TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                      : const Text('LOGIN',
+                      style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
-
-                const SizedBox(height: 20),
 
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const CitizenSignupScreen(),
-                      ),
+                          builder: (_) => const CitizenSignupScreen()),
                     );
                   },
                   child: const Text("Don't have an account? Sign up"),
@@ -163,7 +142,8 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // LOGIN LOGIC UNTOUCHED
+  // ================= LOGIN =================
+
   Future<void> _login() async {
     final input = _inputController.text.trim();
     final password = _passwordController.text.trim();
@@ -173,51 +153,47 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final usersRef = FirebaseFirestore.instance.collection('users');
 
+      // EMAIL LOGIN (Citizen)
+
       if (input.contains('@')) {
-        final cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: input,
-          password: password,
-        );
+        final cred = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: input, password: password);
 
         if (!cred.user!.emailVerified) {
           await FirebaseAuth.instance.signOut();
-          _showMessage('Please verify your email before login');
+          _show('Verify email first');
           return;
         }
 
-        final citizenSnap = await usersRef
-            .where('email', isEqualTo: input)
-            .limit(1)
-            .get();
+        final snap =
+        await usersRef.where('email', isEqualTo: input).limit(1).get();
 
-        final role = citizenSnap.docs.isNotEmpty
-            ? (citizenSnap.docs.first.data()
-        as Map<String, dynamic>)['role']
-            : 'citizen';
+        final role =
+        snap.docs.isNotEmpty ? snap.docs.first['role'] : 'citizen';
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('role', role);
 
-        _go(const HomeScreen());
+        _openByRole(role);
         return;
       }
 
-      final query = await usersRef
-          .where('username', isEqualTo: input)
-          .limit(1)
-          .get();
+      // USERNAME LOGIN (HKS / Panchayath / Admin)
+
+      final query =
+      await usersRef.where('username', isEqualTo: input).limit(1).get();
 
       if (query.docs.isEmpty) {
-        _showMessage('User not found');
+        _show('User not found');
         return;
       }
 
-      final data = query.docs.first.data() as Map<String, dynamic>;
+      final data = query.docs.first.data();
       final role = data['role'];
 
-      if ((data['password'] ?? '').toString() != password) {
-        _showMessage('Wrong password');
+      if ((data['password'] ?? '') != password) {
+        _show('Wrong password');
         return;
       }
 
@@ -225,41 +201,39 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setBool('isLoggedIn', true);
       await prefs.setString('role', role);
 
-      if (role == 'hks') {
-        _go(const HksHomeScreen());
-      } else if (role == 'panchayath') {
-        _go(const PanchayathHomeScreen());
-      } else if (role == 'admin') {
-        _go(const AdminHomeScreen());
-      } else {
-        _showMessage('Invalid role');
-      }
-    } on FirebaseAuthException catch (e) {
-      _showMessage(e.message ?? 'Login failed');
+      _openByRole(role);
     } catch (e) {
-      _showMessage('Login failed');
+      _show(e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+  // ================= ROLE ROUTING =================
+
+  void _openByRole(String role) {
+    if (role == 'hks') {
+      _go(const HksHomeScreen());
+    } else if (role == 'panchayath') {
+      _go(const PanchayathHomeScreen());
+    } else if (role == 'admin') {
+      _go(const AdminHomeScreen());
+    } else {
+      _go(const HomeScreen());
+    }
+  }
+
   void _go(Widget page) {
     Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => page),
-    );
+        context, MaterialPageRoute(builder: (_) => page));
   }
 
   void _forgotPassword() {
     Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ForgotPasswordScreen(),
-      ),
-    );
+        context, MaterialPageRoute(builder: (_) => ForgotPasswordScreen()));
   }
 
-  void _showMessage(String msg) {
+  void _show(String msg) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(msg)));
   }

@@ -5,13 +5,10 @@ import 'login_screen.dart';
 import 'notification_screen.dart';
 import 'create_notification_screen.dart';
 import 'hks_notification_management_screen.dart';
-import 'hks_history_screen.dart';
-import 'hks_status_screen.dart';
 import 'create_complaint_screen.dart';
+import 'hks_status_screen.dart'; // 🔹 Complaint history
 
 class HksHomeScreen extends StatelessWidget {
-
-  // ✅ ONLY FIXED LINE
   const HksHomeScreen({super.key});
 
   Future<void> _handleLogout(BuildContext context) async {
@@ -20,7 +17,7 @@ class HksHomeScreen extends StatelessWidget {
 
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => LoginScreen()),
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
           (route) => false,
     );
   }
@@ -53,17 +50,11 @@ class HksHomeScreen extends StatelessWidget {
     );
   }
 
-  void _openHistory(BuildContext context) {
+  // 🔹 Complaint History
+  void _openComplaintHistory(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => HksHistoryScreen()),
-    );
-  }
-
-  void _openStatus(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => HksStatusScreen()),
+      MaterialPageRoute(builder: (_) => const HksStatusScreen()),
     );
   }
 
@@ -87,6 +78,7 @@ class HksHomeScreen extends StatelessWidget {
           ),
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -123,16 +115,10 @@ class HksHomeScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
+            // 🔹 Complaint History Button
             ElevatedButton(
-              onPressed: () => _openHistory(context),
-              child: const Text('My Complaint History'),
-            ),
-
-            const SizedBox(height: 16),
-
-            ElevatedButton(
-              onPressed: () => _openStatus(context),
-              child: const Text('My Complaint Status'),
+              onPressed: () => _openComplaintHistory(context),
+              child: const Text('Complaint History'),
             ),
           ],
         ),

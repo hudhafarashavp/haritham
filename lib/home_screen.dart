@@ -6,6 +6,7 @@ import 'settings_screen.dart';
 import 'login_screen.dart';
 import 'citizen_complaint_screen.dart';
 import 'illegal_dumping_screen.dart';
+import 'citizen_complaint_history_screen.dart'; // MUST EXIST
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -64,7 +65,6 @@ class HomeScreen extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // Illegal Dumping
             SizedBox(
               width: 240,
               height: 48,
@@ -83,16 +83,13 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text(
-                  'Illegal Dumping',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: const Text('Illegal Dumping',
+                    style: TextStyle(color: Colors.white)),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Submit Complaint
             SizedBox(
               width: 240,
               height: 48,
@@ -111,16 +108,39 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text(
-                  'Submit Complaint',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: const Text('Submit Complaint',
+                    style: TextStyle(color: Colors.white)),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // Settings
+            // ✅ Complaint History Button
+            SizedBox(
+              width: 240,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CitizenComplaintHistoryScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Complaint History',
+                    style: TextStyle(color: Colors.white)),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
             SizedBox(
               width: 240,
               height: 48,
@@ -139,10 +159,8 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text(
-                  'Notification Settings',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: const Text('Notification Settings',
+                    style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
