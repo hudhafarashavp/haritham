@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'create_notification_screen.dart';
+import 'widgets/app_theme.dart';
+import 'widgets/custom_widgets.dart';
 
 class HksNotificationManagementScreen extends StatelessWidget {
   const HksNotificationManagementScreen({super.key});
@@ -9,22 +10,24 @@ class HksNotificationManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F5E9),
-      appBar: AppBar(
-        title: const Text('Manage My Notifications'),
-        backgroundColor: const Color(0xFFE8F5E9),
-        foregroundColor: Colors.black,
-        elevation: 0,
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text('Manage Notifications'), elevation: 0),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppTheme.harithamGreen,
+        child: const Icon(Icons.add_alert_outlined, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => CreateNotificationScreen()),
+          );
+        },
       ),
-
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('notifications')
             .orderBy('createdAt', descending: true)
             .snapshots(),
-
         builder: (context, snapshot) {
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -48,40 +51,51 @@ class HksNotificationManagementScreen extends StatelessWidget {
           final notifications = snapshot.data!.docs;
 
           return ListView.builder(
+            padding: const EdgeInsets.all(AppTheme.padding),
             itemCount: notifications.length,
             itemBuilder: (context, index) {
-
               final doc = notifications[index];
               final data = doc.data() as Map<String, dynamic>;
 
-              return Card(
-                margin: const EdgeInsets.all(10),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: HarithamCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
-                      Text(
-                        data['title'] ?? '',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              data['title'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            data['target']?.toString().toUpperCase() ?? '',
+                            style: const TextStyle(
+                              color: AppTheme.harithamGreen,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-
                       const SizedBox(height: 6),
-
-                      Text(data['message'] ?? ''),
-
-                      const SizedBox(height: 10),
-
+                      Text(
+                        data['message'] ?? '',
+                        style: const TextStyle(color: AppTheme.textGrey),
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-
                           IconButton(
-                            icon: const Icon(Icons.edit),
+                            icon: const Icon(Icons.edit_outlined, size: 20),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -96,17 +110,42 @@ class HksNotificationManagementScreen extends StatelessWidget {
                               );
                             },
                           ),
-
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
                             onPressed: () async {
-                              await FirebaseFirestore.instance
-                                  .collection('notifications')
-                                  .doc(doc.id)
-                                  .delete();
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text("Delete Notification?"),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text("Cancel"),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text(
+                                        "Delete",
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await FirebaseFirestore.instance
+                                    .collection('notifications')
+                                    .doc(doc.id)
+                                    .delete();
+                              }
                             },
                           ),
-
                         ],
                       ),
                     ],

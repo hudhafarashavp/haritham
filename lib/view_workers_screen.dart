@@ -16,11 +16,10 @@ class ViewWorkersScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
-            .where('role', isEqualTo: 'hks')
+            .where('role', whereIn: ['hks', 'hks_worker'])
             .snapshots(),
 
         builder: (context, snapshot) {
-
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -34,7 +33,6 @@ class ViewWorkersScreen extends StatelessWidget {
           return ListView.builder(
             itemCount: workers.length,
             itemBuilder: (context, i) {
-
               final d = workers[i].data() as Map<String, dynamic>;
 
               final name = d['name'] ?? '';

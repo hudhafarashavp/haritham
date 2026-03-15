@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:haritham/services/user_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddWorkerScreen extends StatefulWidget {
@@ -9,7 +11,6 @@ class AddWorkerScreen extends StatefulWidget {
 }
 
 class _AddWorkerScreenState extends State<AddWorkerScreen> {
-
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
@@ -20,46 +21,98 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
   bool isLoading = false;
 
   Future<void> addWorker() async {
-
     if (nameController.text.isEmpty ||
         phoneController.text.isEmpty ||
         emailController.text.isEmpty ||
         usernameController.text.isEmpty ||
         wardController.text.isEmpty ||
         passwordController.text.isEmpty) {
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Fill all fields")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Fill all fields")));
       return;
     }
 
     setState(() => isLoading = true);
 
-    await FirebaseFirestore.instance.collection('workers').add({
-      'name': nameController.text.trim(),
-      'phone': phoneController.text.trim(),
-      'email': emailController.text.trim(),
-      'username': usernameController.text.trim(),
-      'wardNo': wardController.text.trim(),
-      'password': passwordController.text.trim(),
-      'role': 'hks',
-      'active': true,
-      'createdAt': Timestamp.now(),
-    });
+    try {
+      final userService = UserService(); // Declaration added here
+      // 0. Check for unique username
+      final String username = usernameController.text.trim();
+      final String email = emailController.text.trim();
+      final String password = passwordController.text.trim();
 
-    setState(() => isLoading = false);
+      final usernameQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username.toLowerCase())
+          .limit(1)
+          .get();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Worker added successfully")),
-    );
+      bool existsInFirestore = usernameQuery.docs.isNotEmpty;
 
-    Navigator.pop(context);
+      // 1. Create worker account in Firebase Auth
+      UserCredential? userCred;
+      try {
+        userCred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'email-already-in-use') {
+          // If it exists in Auth AND Firestore, then it's actually taken.
+          if (existsInFirestore) {
+            throw 'Username and Email are already taken.';
+          } else {
+            // Exists in Auth but not Firestore? Unusual, but we can't link without UID.
+            throw 'Email is already taken in Authentication system.';
+          }
+        }
+        rethrow;
+      }
+
+      final String uid = userCred.user!.uid;
+
+      // 2. Save worker profile using standardized UserService
+      await userService.createWorker(
+        uid: uid,
+        name: nameController.text.trim(),
+        username: username.toLowerCase(),
+        email: email.toLowerCase(),
+        phone: phoneController.text.trim(),
+        role: 'hks_worker', // Standardized role
+      );
+
+      // 3. Save additional HKS specific data if needed
+      await FirebaseFirestore.instance.collection('workers').doc(uid).update({
+        'wardNo': wardController.text.trim(),
+        'active': true,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Worker added successfully")),
+        );
+        Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Authentication failed")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("Add Worker"),
@@ -71,7 +124,6 @@ class _AddWorkerScreenState extends State<AddWorkerScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(labelText: "Worker Name"),

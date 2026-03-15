@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'add_worker_screen.dart';
 import 'worker_dashboard_screen.dart';
 import 'view_workers_screen.dart';
+import 'widgets/app_theme.dart';
+import 'widgets/custom_widgets.dart';
 
 class WorkerManagementScreen extends StatelessWidget {
   const WorkerManagementScreen({super.key});
@@ -11,14 +12,11 @@ class WorkerManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Workforce Management"),
-        backgroundColor: Colors.green,
-      ),
-
+      backgroundColor: Colors.white,
+      appBar: AppBar(title: const Text("Workforce Management"), elevation: 0),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.person_add),
+        backgroundColor: AppTheme.harithamGreen,
+        child: const Icon(Icons.person_add, color: Colors.white),
         onPressed: () {
           Navigator.push(
             context,
@@ -26,38 +24,26 @@ class WorkerManagementScreen extends StatelessWidget {
           );
         },
       ),
-
       body: Column(
         children: [
-
-          // ✅ VIEW WORKERS / ASSIGN ROUTES BUTTON
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                ),
-                icon: const Icon(Icons.assignment),
-                label: const Text("View Workers / Assign Routes"),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ViewWorkersScreen(),
-                    ),
-                  );
-                },
-              ),
+            padding: const EdgeInsets.all(AppTheme.padding),
+            child: HarithamButton(
+              label: "View Workers / Assign Routes",
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ViewWorkersScreen()),
+                );
+              },
             ),
           ),
-
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('workers').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('workers')
+                  .snapshots(),
               builder: (context, snapshot) {
-
                 if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -69,9 +55,11 @@ class WorkerManagementScreen extends StatelessWidget {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTheme.padding,
+                  ),
                   itemCount: workers.length,
                   itemBuilder: (context, index) {
-
                     final doc = workers[index];
                     final d = doc.data() as Map<String, dynamic>;
                     final docId = doc.id;
@@ -80,32 +68,39 @@ class WorkerManagementScreen extends StatelessWidget {
                     final email = d['email'] ?? '';
                     final active = d['active'] ?? true;
 
-                    return Card(
-                      margin: const EdgeInsets.all(10),
-                      child: ListTile(
-                        title: Text(name),
-                        subtitle: Text(email),
-
-                        trailing: Switch(
-                          value: active,
-                          onChanged: (v) {
-                            FirebaseFirestore.instance
-                                .collection('workers')
-                                .doc(docId)
-                                .update({'active': v});
-                          },
-                        ),
-
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: HarithamCard(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => WorkerDashboardScreen(
-                                workerEmail: email,
-                              ),
+                              builder: (_) =>
+                                  WorkerDashboardScreen(workerEmail: email),
                             ),
                           );
                         },
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            name,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(email),
+                          trailing: Switch(
+                            activeColor: AppTheme.harithamGreen,
+                            value: active,
+                            onChanged: (v) {
+                              FirebaseFirestore.instance
+                                  .collection('workers')
+                                  .doc(docId)
+                                  .update({'active': v});
+                            },
+                          ),
+                        ),
                       ),
                     );
                   },

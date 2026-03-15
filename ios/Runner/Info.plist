@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to location when open to track worker progress during waste collection.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to location even in background to ensure accurate tracking of the collection route.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to location to track worker progress during waste collection.</string>
 </dict>
 </plist>
